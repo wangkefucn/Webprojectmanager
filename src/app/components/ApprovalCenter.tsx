@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { CheckCircle, XCircle, Clock, Calendar, FileText, BarChart3 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { CheckCircle, XCircle, Clock, Calendar, FileText, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
+import { DateRangePicker } from './DateRangePicker';
 
 interface ApprovalCenterProps {
   user: { name: string; role: string; department: string };
@@ -12,7 +13,41 @@ export function ApprovalCenter({ user }: ApprovalCenterProps) {
   const [activeTab, setActiveTab] = useState<'overtime' | 'leave'>('overtime');
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [showWorklogDialog, setShowWorklogDialog] = useState(false);
+  
+  // Helper function to format date to local YYYY-MM-DD
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  // Date range filter state - default to current salary period (21st to 20th)
+  const getCurrentSalaryPeriod = () => {
+    const now = new Date();
+    const currentDay = now.getDate();
+    
+    let start: Date, end: Date;
+    
+    if (currentDay >= 21) {
+      // Current period: 21st of this month to 20th of next month
+      start = new Date(now.getFullYear(), now.getMonth(), 21);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 20);
+    } else {
+      // Current period: 21st of last month to 20th of this month
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 21);
+      end = new Date(now.getFullYear(), now.getMonth(), 20);
+    }
+    
+    return {
+      start: formatDate(start),
+      end: formatDate(end)
+    };
+  };
+
+  const salaryPeriod = getCurrentSalaryPeriod();
+  const [startDate, setStartDate] = useState(salaryPeriod.start);
+  const [endDate, setEndDate] = useState(salaryPeriod.end);
 
   const overtimeApplications = [
     {
@@ -25,7 +60,8 @@ export function ApprovalCenter({ user }: ApprovalCenterProps) {
       endTime: '22:30',
       reason: '变更对应，障害分析',
       status: 'pending',
-      submitTime: '2026-01-04 17:45'
+      submitTime: '2026-01-04 17:45',
+      approver: '李经理'
     },
     {
       id: 2,
@@ -37,7 +73,8 @@ export function ApprovalCenter({ user }: ApprovalCenterProps) {
       endTime: '21:00',
       reason: '项目上线准备工作',
       status: 'pending',
-      submitTime: '2026-01-03 17:30'
+      submitTime: '2026-01-03 17:30',
+      approver: '李经理'
     }
   ];
 
@@ -52,9 +89,19 @@ export function ApprovalCenter({ user }: ApprovalCenterProps) {
       days: 3,
       reason: '家庭事务',
       status: 'pending',
-      submitTime: '2026-01-04 14:20'
+      submitTime: '2026-01-04 14:20',
+      approver: '李经理'
     }
   ];
+
+  // Calculate statistics for the selected date range
+  const stats = {
+    pending: activeTab === 'overtime' 
+      ? overtimeApplications.filter(a => a.status === 'pending').length 
+      : leaveApplications.filter(a => a.status === 'pending').length,
+    approved: 3, // Mock data
+    rejected: 1, // Mock data
+  };
 
   const handleApprove = (item: any) => {
     console.log('Approve:', item);
@@ -69,116 +116,123 @@ export function ApprovalCenter({ user }: ApprovalCenterProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Date Range Picker */}
+      <DateRangePicker
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+      />
+
+      {/* Header with Statistics */}
       <div className="backdrop-blur-xl bg-white/60 rounded-3xl p-6 shadow-2xl border border-white/20">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl text-gray-800 mb-1">审批中心</h2>
             <p className="text-sm text-gray-600">处理团队成员的申请事项</p>
           </div>
-          <div className="flex items-center gap-6 backdrop-blur-lg bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-2xl px-6 py-4 border border-white/30">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">待审批</p>
-              <p className="text-3xl font-bold text-orange-600">
-                {overtimeApplications.length + leaveApplications.length}
-              </p>
+          
+          {/* Statistics Cards */}
+          <div className="flex gap-4">
+            <div className="backdrop-blur-lg bg-orange-100/60 rounded-2xl px-5 py-3 border border-orange-200/30 text-center min-w-[100px]">
+              <p className="text-xs text-orange-600 mb-1">待审批</p>
+              <p className="text-3xl font-bold text-orange-600">{stats.pending}</p>
+            </div>
+            <div className="backdrop-blur-lg bg-green-100/60 rounded-2xl px-5 py-3 border border-green-200/30 text-center min-w-[100px]">
+              <p className="text-xs text-green-600 mb-1">已通过</p>
+              <p className="text-3xl font-bold text-green-600">{stats.approved}</p>
+            </div>
+            <div className="backdrop-blur-lg bg-red-100/60 rounded-2xl px-5 py-3 border border-red-200/30 text-center min-w-[100px]">
+              <p className="text-xs text-red-600 mb-1">已驳回</p>
+              <p className="text-3xl font-bold text-red-600">{stats.rejected}</p>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="backdrop-blur-xl bg-white/60 rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-        <div className="flex border-b border-white/20 bg-white/40">
+        {/* Tabs */}
+        <div className="flex gap-2 bg-white/40 p-2 rounded-xl">
           <button
             onClick={() => setActiveTab('overtime')}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 ${
               activeTab === 'overtime'
-                ? 'bg-white/80 text-indigo-600 shadow-lg backdrop-blur-xl border-b-2 border-indigo-600'
-                : 'text-gray-600 hover:bg-white/40'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg'
+                : 'text-gray-700 hover:bg-white/50'
             }`}
           >
             <Clock className="w-5 h-5" />
             <span className="font-semibold">加班审批</span>
-            {overtimeApplications.length > 0 && (
+            {overtimeApplications.filter(a => a.status === 'pending').length > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                {overtimeApplications.length}
+                {overtimeApplications.filter(a => a.status === 'pending').length}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab('leave')}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 ${
               activeTab === 'leave'
-                ? 'bg-white/80 text-indigo-600 shadow-lg backdrop-blur-xl border-b-2 border-indigo-600'
-                : 'text-gray-600 hover:bg-white/40'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg'
+                : 'text-gray-700 hover:bg-white/50'
             }`}
           >
             <Calendar className="w-5 h-5" />
             <span className="font-semibold">休假审批</span>
-            {leaveApplications.length > 0 && (
+            {leaveApplications.filter(a => a.status === 'pending').length > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                {leaveApplications.length}
+                {leaveApplications.filter(a => a.status === 'pending').length}
               </span>
             )}
           </button>
         </div>
+      </div>
 
-        <div className="p-6">
-          {activeTab === 'overtime' && (
-            <div className="space-y-4">
-              {overtimeApplications.length === 0 ? (
-                <div className="text-center py-12">
-                  <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">暂无待审批的加班申请</p>
-                </div>
-              ) : (
-                overtimeApplications.map((item) => (
-                  <OvertimeApprovalCard
-                    key={item.id}
-                    item={item}
-                    onApprove={() => handleApprove(item)}
-                    onReject={() => {
-                      setSelectedItem(item);
-                      setShowRejectDialog(true);
-                    }}
-                    onViewWorklog={() => {
-                      setSelectedItem(item);
-                      setShowWorklogDialog(true);
-                    }}
-                  />
-                ))
-              )}
-            </div>
-          )}
+      {/* Content */}
+      <div className="space-y-4">
+        {activeTab === 'overtime' && (
+          <>
+            {overtimeApplications.length === 0 ? (
+              <div className="backdrop-blur-xl bg-white/60 rounded-3xl p-12 shadow-2xl border border-white/20 text-center">
+                <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">暂无待审批的加班申请</p>
+              </div>
+            ) : (
+              overtimeApplications.map((item) => (
+                <OvertimeApprovalCard
+                  key={item.id}
+                  item={item}
+                  onApprove={() => handleApprove(item)}
+                  onReject={() => {
+                    setSelectedItem(item);
+                    setShowRejectDialog(true);
+                  }}
+                />
+              ))
+            )}
+          </>
+        )}
 
-          {activeTab === 'leave' && (
-            <div className="space-y-4">
-              {leaveApplications.length === 0 ? (
-                <div className="text-center py-12">
-                  <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">暂无待审批的休假申请</p>
-                </div>
-              ) : (
-                leaveApplications.map((item) => (
-                  <LeaveApprovalCard
-                    key={item.id}
-                    item={item}
-                    onApprove={() => handleApprove(item)}
-                    onReject={() => {
-                      setSelectedItem(item);
-                      setShowRejectDialog(true);
-                    }}
-                    onViewWorklog={() => {
-                      setSelectedItem(item);
-                      setShowWorklogDialog(true);
-                    }}
-                  />
-                ))
-              )}
-            </div>
-          )}
-        </div>
+        {activeTab === 'leave' && (
+          <>
+            {leaveApplications.length === 0 ? (
+              <div className="backdrop-blur-xl bg-white/60 rounded-3xl p-12 shadow-2xl border border-white/20 text-center">
+                <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">暂无待审批的休假申请</p>
+              </div>
+            ) : (
+              leaveApplications.map((item) => (
+                <LeaveApprovalCard
+                  key={item.id}
+                  item={item}
+                  onApprove={() => handleApprove(item)}
+                  onReject={() => {
+                    setSelectedItem(item);
+                    setShowRejectDialog(true);
+                  }}
+                />
+              ))
+            )}
+          </>
+        )}
       </div>
 
       {/* Reject Dialog */}
@@ -190,81 +244,68 @@ export function ApprovalCenter({ user }: ApprovalCenterProps) {
         }}
         onConfirm={handleReject}
       />
-
-      {/* Worklog Dialog */}
-      <WorklogDialog
-        open={showWorklogDialog}
-        onClose={() => {
-          setShowWorklogDialog(false);
-          setSelectedItem(null);
-        }}
-        applicant={selectedItem?.name}
-      />
     </div>
   );
 }
 
-function OvertimeApprovalCard({ item, onApprove, onReject, onViewWorklog }: any) {
+function OvertimeApprovalCard({ item, onApprove, onReject }: any) {
   return (
-    <div className="backdrop-blur-lg bg-white/70 rounded-2xl p-6 border border-white/30 hover:shadow-lg transition-all duration-200">
-      <div className="flex items-start justify-between mb-4">
+    <div className="backdrop-blur-xl bg-white/60 rounded-3xl p-6 shadow-2xl border border-white/20 hover:shadow-xl transition-all duration-200">
+      <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-lg">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
             {item.name.charAt(0)}
           </div>
           <div>
-            <h4 className="text-lg font-semibold text-gray-800">{item.name}</h4>
+            <h4 className="text-xl font-semibold text-gray-800">{item.name}</h4>
             <p className="text-sm text-gray-600">{item.department}</p>
           </div>
         </div>
         <div className="text-right">
-          <div className="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-sm font-semibold inline-block">
+          <div className="px-4 py-2 bg-orange-100 text-orange-700 rounded-xl text-sm font-semibold inline-block mb-2">
             待审批
           </div>
-          <p className="text-xs text-gray-500 mt-1">{item.submitTime}</p>
+          <p className="text-xs text-gray-500">{item.submitTime}</p>
         </div>
       </div>
 
-      <div className="space-y-3 mb-6">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="backdrop-blur-lg bg-white/50 rounded-xl p-3">
-            <p className="text-sm text-gray-600 mb-1">加班日期</p>
-            <p className="font-semibold text-gray-800">{item.date}</p>
-          </div>
-          <div className="backdrop-blur-lg bg-white/50 rounded-xl p-3">
-            <p className="text-sm text-gray-600 mb-1">加班时长</p>
-            <p className="font-semibold text-indigo-600 text-lg">{item.hours} 小时</p>
-          </div>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30">
+          <p className="text-sm text-gray-600 mb-1">加班日期</p>
+          <p className="font-semibold text-gray-800 text-lg">{item.date}</p>
         </div>
-
-        <div className="backdrop-blur-lg bg-white/50 rounded-xl p-3">
+        <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30">
+          <p className="text-sm text-gray-600 mb-1">加班时长</p>
+          <p className="font-semibold text-indigo-600 text-2xl">{item.hours} <span className="text-sm">小时</span></p>
+        </div>
+        <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30">
           <p className="text-sm text-gray-600 mb-1">加班时间</p>
           <p className="font-semibold text-gray-800">{item.startTime} - {item.endTime}</p>
         </div>
-
-        <div className="backdrop-blur-lg bg-white/50 rounded-xl p-3">
-          <p className="text-sm text-gray-600 mb-1">加班事由</p>
-          <p className="text-gray-800">{item.reason}</p>
+        <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30">
+          <p className="text-sm text-gray-600 mb-1">审批人</p>
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-gray-600" />
+            <p className="font-semibold text-gray-800">{item.approver}</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <button
-          onClick={onViewWorklog}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 backdrop-blur-lg bg-white/70 border border-white/30 text-gray-700 rounded-xl hover:shadow-lg transition-all duration-200"
-        >
-          <BarChart3 className="w-4 h-4" />
-          <span>查看工时报表</span>
-        </button>
+      <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30 mb-6">
+        <p className="text-sm text-gray-600 mb-2">加班事由</p>
+        <p className="text-gray-800">{item.reason}</p>
+      </div>
+
+      <div className="flex gap-3 justify-end">
         <button
           onClick={onReject}
-          className="px-6 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105"
+          className="px-8 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105 font-medium"
         >
           驳回
         </button>
         <button
           onClick={onApprove}
-          className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105"
+          className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105 font-medium"
         >
           同意
         </button>
@@ -273,69 +314,66 @@ function OvertimeApprovalCard({ item, onApprove, onReject, onViewWorklog }: any)
   );
 }
 
-function LeaveApprovalCard({ item, onApprove, onReject, onViewWorklog }: any) {
+function LeaveApprovalCard({ item, onApprove, onReject }: any) {
   return (
-    <div className="backdrop-blur-lg bg-white/70 rounded-2xl p-6 border border-white/30 hover:shadow-lg transition-all duration-200">
-      <div className="flex items-start justify-between mb-4">
+    <div className="backdrop-blur-xl bg-white/60 rounded-3xl p-6 shadow-2xl border border-white/20 hover:shadow-xl transition-all duration-200">
+      <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-lg">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
             {item.name.charAt(0)}
           </div>
           <div>
-            <h4 className="text-lg font-semibold text-gray-800">{item.name}</h4>
+            <h4 className="text-xl font-semibold text-gray-800">{item.name}</h4>
             <p className="text-sm text-gray-600">{item.department}</p>
           </div>
         </div>
         <div className="text-right">
-          <div className="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-sm font-semibold inline-block">
+          <div className="px-4 py-2 bg-orange-100 text-orange-700 rounded-xl text-sm font-semibold inline-block mb-2">
             待审批
           </div>
-          <p className="text-xs text-gray-500 mt-1">{item.submitTime}</p>
+          <p className="text-xs text-gray-500">{item.submitTime}</p>
         </div>
       </div>
 
-      <div className="space-y-3 mb-6">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="backdrop-blur-lg bg-white/50 rounded-xl p-3">
-            <p className="text-sm text-gray-600 mb-1">休假类型</p>
-            <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold inline-block">
-              {item.type}
-            </div>
-          </div>
-          <div className="backdrop-blur-lg bg-white/50 rounded-xl p-3">
-            <p className="text-sm text-gray-600 mb-1">休假天数</p>
-            <p className="font-semibold text-indigo-600 text-lg">{item.days} 天</p>
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30">
+          <p className="text-sm text-gray-600 mb-1">休假类型</p>
+          <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold inline-block">
+            {item.type}
           </div>
         </div>
-
-        <div className="backdrop-blur-lg bg-white/50 rounded-xl p-3">
+        <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30">
+          <p className="text-sm text-gray-600 mb-1">休假天数</p>
+          <p className="font-semibold text-indigo-600 text-2xl">{item.days} <span className="text-sm">天</span></p>
+        </div>
+        <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30 col-span-2">
           <p className="text-sm text-gray-600 mb-1">休假时间</p>
           <p className="font-semibold text-gray-800">{item.startDate} 至 {item.endDate}</p>
         </div>
-
-        <div className="backdrop-blur-lg bg-white/50 rounded-xl p-3">
-          <p className="text-sm text-gray-600 mb-1">休假事由</p>
-          <p className="text-gray-800">{item.reason}</p>
+        <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30 col-span-2">
+          <p className="text-sm text-gray-600 mb-1">审批人</p>
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-gray-600" />
+            <p className="font-semibold text-gray-800">{item.approver}</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <button
-          onClick={onViewWorklog}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 backdrop-blur-lg bg-white/70 border border-white/30 text-gray-700 rounded-xl hover:shadow-lg transition-all duration-200"
-        >
-          <BarChart3 className="w-4 h-4" />
-          <span>查看工时报表</span>
-        </button>
+      <div className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-white/30 mb-6">
+        <p className="text-sm text-gray-600 mb-2">休假事由</p>
+        <p className="text-gray-800">{item.reason}</p>
+      </div>
+
+      <div className="flex gap-3 justify-end">
         <button
           onClick={onReject}
-          className="px-6 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105"
+          className="px-8 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105 font-medium"
         >
           驳回
         </button>
         <button
           onClick={onApprove}
-          className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105"
+          className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105 font-medium"
         >
           同意
         </button>
@@ -349,74 +387,33 @@ function RejectDialog({ open, onClose, onConfirm }: { open: boolean; onClose: ()
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="backdrop-blur-2xl bg-white/90 border-white/20 shadow-2xl max-w-md">
+      <DialogContent className="backdrop-blur-2xl bg-white/95 border-white/20 shadow-2xl !w-[96vw] !max-w-[96vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">驳回申请</DialogTitle>
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">驳回申请</DialogTitle>
+          <DialogDescription className="text-xs text-gray-500">请填写驳回理由</DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          <label className="block text-sm mb-2 text-gray-700">驳回理由</label>
-          <Textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="请输入驳回原因..."
-            className="backdrop-blur-lg bg-white/70 border-white/30 min-h-[120px]"
-          />
-        </div>
-        <div className="flex gap-3 justify-end">
-          <Button variant="outline" onClick={onClose} className="backdrop-blur-lg bg-white/70">
-            取消
-          </Button>
-          <Button onClick={onConfirm} className="bg-gradient-to-r from-red-500 to-red-600 text-white">
-            确认驳回
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function WorklogDialog({ open, onClose, applicant }: { open: boolean; onClose: () => void; applicant?: string }) {
-  const workLogs = [
-    { date: '2026-01-04', project: '项目A', task: '障害分析', hours: 5.0 },
-    { date: '2026-01-04', project: '项目A', task: '变更对应', hours: 3.5 },
-    { date: '2026-01-03', project: '项目B', task: '开发', hours: 6.0 },
-  ];
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="backdrop-blur-2xl bg-white/90 border-white/20 shadow-2xl max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">{applicant} - 工时报表</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <div className="space-y-3">
-            {workLogs.map((log, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-4 backdrop-blur-lg bg-white/70 rounded-xl border border-white/30"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-gray-800">{log.date.split('-')[2]}</div>
-                    <div className="text-xs text-gray-600">{log.date.substring(0, 7)}</div>
-                  </div>
-                  <div className="h-10 w-px bg-gray-300"></div>
-                  <div>
-                    <p className="font-semibold text-gray-800">{log.project}</p>
-                    <p className="text-sm text-gray-600">{log.task}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-indigo-600">{log.hours}</p>
-                  <p className="text-sm text-gray-600">小时</p>
-                </div>
-              </div>
-            ))}
+        <div className="space-y-3 py-2">
+          <div className="backdrop-blur-lg bg-gradient-to-r from-gray-50/80 to-slate-50/80 rounded-xl p-3 border border-gray-100/50 shadow-inner">
+            <label className="block text-xs mb-1.5 text-gray-700 font-bold">驳回理由</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="请输入驳回理由..."
+              rows={4}
+              className="w-full px-3 py-2 backdrop-blur-lg bg-white/80 border border-white/50 rounded-lg text-gray-800 resize-none font-medium text-sm"
+            />
           </div>
         </div>
-        <div className="flex justify-end">
-          <Button onClick={onClose} className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-            关闭
+        <div className="flex gap-3 justify-end pt-2 border-t border-gray-200">
+          <Button variant="outline" onClick={onClose} className="backdrop-blur-lg bg-white/70 px-4 py-2">
+            取消
+          </Button>
+          <Button 
+            onClick={() => { onConfirm(); onClose(); }} 
+            className="bg-gradient-to-r from-red-500 to-pink-600 text-white px-6 py-2"
+          >
+            <XCircle className="w-4 h-4 mr-2" />
+            确认驳回
           </Button>
         </div>
       </DialogContent>
