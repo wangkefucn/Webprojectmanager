@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Plus, Clock, Save, BarChart3, ChevronDown, ChevronUp, Edit, History } from 'lucide-react';
+import { Plus, Clock, Save, BarChart3, ChevronDown, ChevronUp, Edit, History, MessageSquare, Users, AlertCircle, CheckCircle2, Calendar as CalendarIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { DateRangePicker } from './DateRangePicker';
+import { SAMPLE_WORK_LOGS } from '../data/sampleWorkLogs';
 
 interface DailyWorkLogProps {
   user: { name: string; role: string; department: string };
@@ -64,44 +65,7 @@ export function DailyWorkLog({ user }: DailyWorkLogProps) {
   const [startDate, setStartDate] = useState(salaryPeriod.start);
   const [endDate, setEndDate] = useState(salaryPeriod.end);
 
-  const [workLogs, setWorkLogs] = useState([
-    {
-      id: 1,
-      date: '2026-01-06',
-      project: '项目A - ERP系统升级',
-      phase: '開発',
-      hours: 8.0,
-      startTime: '08:30',
-      endTime: '17:30',
-      description: '用户管理模块开发',
-      workType: '通常',
-      modifiedAt: null
-    },
-    {
-      id: 2,
-      date: '2026-01-05',
-      project: '项目B - 移动端开发',
-      phase: '単体测试実施',
-      hours: 6.5,
-      startTime: '08:30',
-      endTime: '15:00',
-      description: 'UI组件单元测试',
-      workType: '通常',
-      modifiedAt: '2026-01-05 16:30'
-    },
-    {
-      id: 3,
-      date: '2026-01-05',
-      project: 'JIRA对应',
-      phase: '-',
-      hours: 1.5,
-      startTime: '15:00',
-      endTime: '16:30',
-      description: 'JIRA-1234 问题处理',
-      workType: '通常',
-      modifiedAt: null
-    },
-  ]);
+  const [workLogs, setWorkLogs] = useState(SAMPLE_WORK_LOGS);
 
   const handleEdit = (log: any) => {
     setEditingLog(log);
@@ -145,64 +109,199 @@ export function DailyWorkLog({ user }: DailyWorkLogProps) {
       </div>
 
       {/* Work Logs */}
-      <div className="space-y-3">
-        {workLogs.map((log) => (
-          <div
-            key={log.id}
-            className="backdrop-blur-xl bg-white/60 rounded-2xl p-5 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 flex-1">
-                <div className="text-center min-w-[80px]">
-                  <div className="text-2xl font-bold text-gray-800">{log.date.split('-')[2]}</div>
-                  <div className="text-sm text-gray-600">{log.date.substring(0, 7)}</div>
+      <div className="space-y-6">
+        {(() => {
+          // 按日期分组工作记录
+          const groupedByDate: Record<string, typeof workLogs> = {};
+          workLogs.forEach(log => {
+            if (!groupedByDate[log.date]) {
+              groupedByDate[log.date] = [];
+            }
+            groupedByDate[log.date].push(log);
+          });
+          
+          // 格式化日期：2026/01/04(日)
+          const formatDateWithWeekday = (dateStr: string) => {
+            const date = new Date(dateStr);
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const weekday = weekdays[date.getDay()];
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}/${month}/${day}(${weekday})`;
+          };
+          
+          // 按日期排序（最新在前）
+          const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
+          
+          return sortedDates.map(date => {
+            const logsForDate = groupedByDate[date];
+            const dailyTotal = logsForDate.reduce((sum, log) => sum + log.hours, 0);
+            
+            return (
+              <div key={date} className="space-y-3">
+                {/* 日期标题栏 with 合计 */}
+                <div className="backdrop-blur-lg bg-gradient-to-r from-indigo-500/90 to-purple-600/90 rounded-2xl p-4 shadow-xl border border-white/20">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <CalendarIcon className="w-5 h-5" />
+                      {formatDateWithWeekday(date)}
+                    </h3>
+                    <div className="flex items-center gap-2 bg-white/20 backdrop-blur-lg px-4 py-2 rounded-xl">
+                      <span className="text-sm text-white/90">日合计</span>
+                      <span className="text-2xl font-bold text-white">{dailyTotal.toFixed(2)}h</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="h-12 w-px bg-gray-300"></div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-gray-800">{log.project}</h3>
-                    {log.phase !== '-' && (
-                      <>
-                        <span className="text-gray-400">→</span>
-                        <span className="text-sm px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg">{log.phase}</span>
-                      </>
+                
+                {/* 该日期的所有记录 */}
+                <div className="space-y-3 pl-4">
+                  {logsForDate.map((log) => {
+                    // 判断作业类型，决定背景渐变色和图标
+                    const getWorkCategoryStyles = () => {
+                      if (log.workCategory === 'jira') {
+                        return {
+                          gradient: 'from-orange-50/60 to-red-50/60',
+                          border: 'border-orange-100/40',
+                          icon: <MessageSquare className="w-5 h-5 text-orange-600" />,
+                          badge: 'bg-gradient-to-r from-orange-500 to-red-600 text-white',
+                          label: '保守对应（JIRA/チャット）'
+                        };
+                      } else if (log.workCategory === 'management') {
+                        return {
+                          gradient: 'from-green-50/60 to-emerald-50/60',
+                          border: 'border-green-100/40',
+                          icon: <Users className="w-5 h-5 text-green-600" />,
+                          badge: 'bg-gradient-to-r from-green-500 to-emerald-600 text-white',
+                          label: '保守对应（管理）'
+                        };
+                      } else {
+                        return {
+                          gradient: 'from-indigo-50/40 to-purple-50/40',
+                          border: 'border-indigo-100/30',
+                          icon: <CheckCircle2 className="w-5 h-5 text-indigo-600" />,
+                          badge: 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white',
+                          label: '一般案件对应'
+                        };
+                      }
+                    };
+                    
+                              const styles = getWorkCategoryStyles();
+                    
+                    return (
+                      <div
+                        key={log.id}
+                        className={`backdrop-blur-xl bg-gradient-to-r ${styles.gradient} rounded-2xl p-5 shadow-xl border ${styles.border} hover:shadow-2xl transition-all duration-200`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1">
+                            {/* 分类图标 */}
+                            <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                              <div className="p-2 backdrop-blur-lg bg-white/80 rounded-lg shadow-md">
+                                {styles.icon}
+                              </div>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full ${styles.badge} font-semibold`}>
+                                {log.workCategory === 'jira' ? 'JIRA/Chat' : log.workCategory === 'management' ? '管理' : '开发'}
+                              </span>
+                            </div>
+                            
+                            <div className="h-16 w-px bg-gray-300"></div>
+                  
+                  {/* 主要内容 */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-gray-800 text-base">{log.project}</h3>
+                      
+                      {/* 一般案件：显示工程 */}
+                      {log.phase !== '-' && (
+                        <>
+                          <span className="text-gray-400">→</span>
+                          <span className="text-sm px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg font-medium">{log.phase}</span>
+                        </>
+                      )}
+                      
+                      {/* JIRA/チャット对应：显示类型和号码 */}
+                      {log.workCategory === 'jira' && log.subType && (
+                        <>
+                          <span className="text-gray-400">|</span>
+                          <span className="text-xs px-2.5 py-1 bg-orange-100 text-orange-700 rounded-lg font-medium">{log.subType}</span>
+                          {log.jiraNumber && (
+                            <>
+                              <span className="text-gray-400">→</span>
+                              <span className="text-xs px-2.5 py-1 bg-white/80 text-orange-800 rounded-lg font-bold border border-orange-200">
+                                {log.jiraNumber}
+                              </span>
+                            </>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* 管理对应：显示类型和主题 */}
+                      {log.workCategory === 'management' && log.subType && (
+                        <>
+                          <span className="text-gray-400">|</span>
+                          <span className="text-xs px-2.5 py-1 bg-green-100 text-green-700 rounded-lg font-medium flex items-center gap-1">
+                            <CalendarIcon className="w-3 h-3" />
+                            {log.subType}
+                          </span>
+                          {log.jiraNumber && (
+                            <>
+                              <span className="text-gray-400">→</span>
+                              <span className="text-xs px-2.5 py-1 bg-white/80 text-green-800 rounded-lg font-bold border border-green-200">
+                                {log.jiraNumber}
+                              </span>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* 作业内容描述 */}
+                    <p className="text-sm text-gray-700 mb-1 pl-1">{log.description}</p>
+                    
+                    {/* 修改时间标记 */}
+                    {log.modifiedAt && (
+                      <div className="flex items-center gap-1 text-xs text-orange-600 pl-1">
+                        <History className="w-3 h-3" />
+                        <span>修改于 {log.modifiedAt}</span>
+                      </div>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">{log.description}</p>
-                  {log.modifiedAt && (
-                    <div className="flex items-center gap-1 text-xs text-orange-600">
-                      <History className="w-3 h-3" />
-                      <span>修改于 {log.modifiedAt}</span>
-                    </div>
-                  )}
                 </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-sm text-gray-600">
-                  <Clock className="w-4 h-4 inline mr-1" />
-                  {log.startTime} - {log.endTime}
-                </div>
-                <div className="text-right min-w-[120px]">
-                  <div className={`px-3 py-1 rounded-lg text-sm mb-1 inline-block ${
-                    log.workType === '残業' ? 'bg-orange-100 text-orange-700' :
-                    log.workType === '休日' ? 'bg-red-100 text-red-700' :
-                    'bg-green-100 text-green-700'
-                  }`}>
-                    {log.workType}
+                
+                {/* 右侧：时间和操作 */}
+                <div className="flex items-center gap-6">
+                  <div className="text-sm text-gray-600 min-w-[140px]">
+                    <Clock className="w-4 h-4 inline mr-1" />
+                    <span className="font-medium">{log.startTime} - {log.endTime}</span>
                   </div>
-                  <div className="text-2xl font-bold text-indigo-600">{log.hours}h</div>
+                  <div className="text-right min-w-[120px]">
+                    <div className={`px-3 py-1 rounded-lg text-sm mb-1 inline-block font-medium ${
+                      log.workType === '残業' ? 'bg-orange-100 text-orange-700' :
+                      log.workType === '休日' ? 'bg-red-100 text-red-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {log.workType}
+                    </div>
+                    <div className="text-2xl font-bold text-indigo-600">{log.hours}h</div>
+                  </div>
+                  <button
+                    onClick={() => handleEdit(log)}
+                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                    title="修改记录"
+                  >
+                    <Edit className="w-5 h-5 text-gray-600" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleEdit(log)}
-                  className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                  title="修改记录"
-                >
-                  <Edit className="w-5 h-5 text-gray-600" />
-                </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
+            );
+          });
+        })()}
       </div>
 
       {/* Dialogs */}
@@ -218,17 +317,18 @@ export function DailyWorkLog({ user }: DailyWorkLogProps) {
 }
 
 function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  // ADD_DIALOG_MARKER
   const [workCategory, setWorkCategory] = useState<'normal' | 'jira' | 'management'>('normal');
   const [workType, setWorkType] = useState<'通常' | '残業' | '休日'>('通常');
   const [projectGroup, setProjectGroup] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedPhase, setSelectedPhase] = useState('');
   const [selectedSubType, setSelectedSubType] = useState('');
-  const [jiraNumber, setJiraNumber] = useState('');
+  const [jiraNumber, setJiraNumber] = useState('');  // 用于JIRA号码和管理工作主题（统一UI）
   const [description, setDescription] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   
-  // 时间选择 - 改为数组存储多个选中的时间段
+  // [AddDialog] 时间选择 - 改为数组存储多个选中的时间段
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [showMorningHours, setShowMorningHours] = useState(false);
   const [showNightHours, setShowNightHours] = useState(false);
@@ -264,8 +364,9 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
   const projectGroups = ['项目组A', '项目组B', '项目组C', 'Enhance'];
   const jiraTypes = ['JIRA对应', 'チャット对应', 'メール对应', 'そのた'];
   const managementTypes = ['マネジメント会議', '日次定例', '週次定例', '内部管理', 'そのた'];
+  // ADD_MANAGEMENT_INPUT_MARKER
 
-  // 切换时间段选中状态
+  // 切换时间段选中状态  
   const toggleTimeSlot = (time: string) => {
     setSelectedTimeSlots(prev => {
       if (prev.includes(time)) {
@@ -347,7 +448,7 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
           <DialogDescription className="text-xs text-gray-500">填写工作内容和时间信息</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
-          {/* 日期选择 */}
+          {/* ADD_DIALOG_CONTENT - 日期选择 */}
           <div className="backdrop-blur-lg bg-gradient-to-r from-blue-50/80 to-cyan-50/80 rounded-xl p-3 border border-blue-100/50">
             <label className="block text-xs mb-1.5 text-gray-700 font-semibold">作业日期</label>
             <Input
@@ -418,7 +519,7 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
             </div>
           </div>
 
-          {/* 根据作业分类显示不同内容 */}
+          {/* ADD_DIALOG_CATEGORIES - 根据作业分类显示不同内容 */}
           {workCategory === 'normal' && (
             <div className="backdrop-blur-lg bg-gradient-to-r from-indigo-50/80 to-purple-50/80 rounded-xl p-3 border border-indigo-100/50 shadow-inner">
               <label className="block text-xs mb-2 text-gray-700 font-bold">选择案件</label>
@@ -502,7 +603,7 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
           {workCategory === 'management' && (
             <div className="backdrop-blur-lg bg-gradient-to-r from-green-50/80 to-emerald-50/80 rounded-xl p-3 border border-green-100/50 shadow-inner">
               <label className="block text-xs mb-2 text-gray-700 font-bold">管理对应类型</label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-2 mb-3">
                 {managementTypes.map((type) => (
                   <button
                     key={type}
@@ -517,6 +618,19 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
                   </button>
                 ))}
               </div>
+              {selectedSubType && (
+                <div>
+                  <label className="block text-xs mb-1.5 text-gray-700 font-semibold">
+                    会议主题/管理工作名称 <span className="text-gray-400">(可选)</span>
+                  </label>
+                  <Input
+                    value={jiraNumber}
+                    onChange={(e) => setJiraNumber(e.target.value)}
+                    placeholder="例：Q1项目复盘会议、新员工入职培训..."
+                    className="backdrop-blur-lg bg-white/80 border-white/50"
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -681,8 +795,9 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
 }
 
 function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () => void; log: any }) {
-  // Similar structure to AddWorkLogDialog but pre-filled with log data
+  // EDIT_DIALOG_MARKER - Similar structure to AddWorkLogDialog but pre-filled with log data
   if (!log) return null;
+  // EDIT_DIALOG_START
 
   const [workCategory, setWorkCategory] = useState<'normal' | 'jira' | 'management'>(log.category || 'normal');
   const [workType, setWorkType] = useState<'通常' | '残業' | '休日'>(log.type || '通常');
@@ -730,6 +845,7 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
   const projectGroups = ['项目组A', '项目组B', '项目组C', 'Enhance'];
   const jiraTypes = ['JIRA对应', 'チャット对应', 'メール对应', 'そのた'];
   const managementTypes = ['マネジメント会議', '日次定例', '週次定例', '内部管理', 'そのた'];
+  // EDITDIALOG_VARS
 
   // 切换时间段选中状态
   const toggleTimeSlot = (time: string) => {
@@ -810,7 +926,7 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
           <DialogDescription className="text-xs text-gray-500">修改后将记录修改时间</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
-          {/* 日期选择 */}
+          {/* EDITDIALOG_CONTENT - 日期选择 */}
           <div className="backdrop-blur-lg bg-gradient-to-r from-blue-50/80 to-cyan-50/80 rounded-xl p-3 border border-blue-100/50">
             <label className="block text-xs mb-1.5 text-gray-700 font-semibold">作业日期</label>
             <Input
@@ -881,7 +997,7 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
             </div>
           </div>
 
-          {/* 根据作业分类显示不同内容 */}
+          {/* EDITDIALOG_CATEGORIES - 根据作业分类显示不同内容 */}
           {workCategory === 'normal' && (
             <div className="backdrop-blur-lg bg-gradient-to-r from-indigo-50/80 to-purple-50/80 rounded-xl p-3 border border-indigo-100/50 shadow-inner">
               <label className="block text-xs mb-2 text-gray-700 font-bold">选择案件</label>
@@ -965,7 +1081,7 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
           {workCategory === 'management' && (
             <div className="backdrop-blur-lg bg-gradient-to-r from-green-50/80 to-emerald-50/80 rounded-xl p-3 border border-green-100/50 shadow-inner">
               <label className="block text-xs mb-2 text-gray-700 font-bold">管理对应类型</label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-2 mb-3">
                 {managementTypes.map((type) => (
                   <button
                     key={type}
@@ -980,6 +1096,19 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
                   </button>
                 ))}
               </div>
+              {selectedSubType && (
+                <div>
+                  <label className="block text-xs mb-1.5 text-gray-700 font-semibold">
+                    会议主题/管理工作名称 <span className="text-gray-400">(可选)</span>
+                  </label>
+                  <Input
+                    value={jiraNumber}
+                    onChange={(e) => setJiraNumber(e.target.value)}
+                    placeholder="例：Q1项目复盘会议、新员工入职培训..."
+                    className="backdrop-blur-lg bg-white/80 border-white/50"
+                  />
+                </div>
+              )}
             </div>
           )}
 

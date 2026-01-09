@@ -11,29 +11,16 @@ interface ProjectManagementProps {
 
 // 完整的22个工程列表
 const ALL_PHASES = [
-  '概要設計',
-  '方式设计',
-  '基本設計',
-  '詳細設計',
-  '開発',
-  '単体测试准备',
-  '単体测试实施',
-  '連結测试（内部）准备',
-  '連結测试（内部）实施',
-  '連結测试（外部）准备',
-  '連結测试（外部）实施',
-  '系统间测试准备',
-  '系统间测试实施',
-  '综合测试准备',
-  '综合测试实施',
-  '性能测试准备',
-  '性能测试实施',
-  '发布演练准备',
-  '发布演练实施',
-  '生产发布准备',
-  '生产发布实施',
-  '经理（案件推进）',
-  '缓冲',
+  '概要設計', '方式设计', '基本設計', '詳細設計', '開発',
+  '単体测试準備', '単体测试実施',
+  '連結测试（内部）準備', '連結测试（内部）実施',
+  '連結测试（外部）準備', '連結测试（外部）実施',
+  'システム間测试準備', 'システム間测试実施',
+  '総合测试準備', '総合测试実施',
+  '性能测试準備', '性能测试実施',
+  'リリースリハ準備', 'リリースリハ実施',
+  '本番リリース準備', '本番リリース実施',
+  'マネージャー（案件推進）', 'バッファ',
 ];
 
 export function ProjectManagement({ user }: ProjectManagementProps) {
@@ -106,7 +93,7 @@ export function ProjectManagement({ user }: ProjectManagementProps) {
       workData: {
         '项目组B': {
           projects: [
-            { name: '项目B - 移动端开发', hours: 28.5, phases: { '単体测试准备': 10, '単体测试实施': 18.5 } }
+            { name: '项目B - 移动端开发', hours: 28.5, phases: { '単体测试準備': 10, '単体测试実施': 18.5 } }
           ],
           conservative: 4.5
         }
@@ -119,7 +106,7 @@ export function ProjectManagement({ user }: ProjectManagementProps) {
       workData: {
         '项目组A': {
           projects: [
-            { name: '项目A - ERP系统升级', hours: 24.9, phases: { '開発': 15, '単体测试准备': 9.9 } }
+            { name: '项目A - ERP系统升级', hours: 24.9, phases: { '開発': 15, '単体测试準備': 9.9 } }
           ],
           conservative: 6.0
         }
@@ -132,7 +119,7 @@ export function ProjectManagement({ user }: ProjectManagementProps) {
       workData: {
         '项目组A': {
           projects: [
-            { name: '项目A - ERP系统升级', hours: 28.0, phases: { '開発': 19.5, '単体测试实施': 8.5 } }
+            { name: '项目A - ERP系统升级', hours: 28.0, phases: { '開発': 19.5, '単体测试実施': 8.5 } }
           ],
           conservative: 4.0
         }
@@ -155,9 +142,9 @@ export function ProjectManagement({ user }: ProjectManagementProps) {
         '概要設計': { budget: 30, used: 28 },
         '詳細設計': { budget: 40, used: 35 },
         '開発': { budget: 80, used: 60 },
-        '単体测试准备': { budget: 15, used: 10 },
-        '単体测试实施': { budget: 15, used: 5 },
-        '連結测试（内部）实施': { budget: 20, used: 7 },
+        '単体测试準備': { budget: 15, used: 10 },
+        '単体测试実施': { budget: 15, used: 5 },
+        '連結测试（内部）実施': { budget: 20, used: 7 },
       }
     },
     {
@@ -174,9 +161,9 @@ export function ProjectManagement({ user }: ProjectManagementProps) {
         '概要設計': { budget: 25, used: 25 },
         '詳細設計': { budget: 30, used: 30 },
         '開発': { budget: 60, used: 35 },
-        '単体测试准备': { budget: 15, used: 3 },
-        '単体测试实施': { budget: 10, used: 2 },
-        '連結测试（内部）准备': { budget: 10, used: 0 },
+        '単体测试準備': { budget: 15, used: 3 },
+        '単体测试実施': { budget: 10, used: 2 },
+        '連結测试（内部）準備': { budget: 10, used: 0 },
       }
     },
     {
@@ -191,7 +178,7 @@ export function ProjectManagement({ user }: ProjectManagementProps) {
       status: 'warning',
       phases: {
         '開発': { budget: 30, used: 65 },
-        '単体测试实施': { budget: 20, used: 41.5 },
+        '単体测试実施': { budget: 20, used: 41.5 },
       }
     }
   ];

@@ -1,0 +1,722 @@
+// 工作记录示例数据 - 按日期分组，每个日期内按：个别案件→工程 → 保守（JIRA/チャット）→ 保守（管理）顺序
+export const SAMPLE_WORK_LOGS = [
+  // ========== 2026/01/09(金) ==========
+  // 一般案件对应
+  {
+    id: 1,
+    date: '2026-01-09',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '概要設計',
+    hours: 3.0,
+    startTime: '08:30',
+    endTime: '11:30',
+    description: '系统架构设计，编写概要设计文档',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 2,
+    date: '2026-01-09',
+    projectGroup: '项目组B',
+    project: '项目B - 移动端开发',
+    phase: '詳細設計',
+    hours: 2.5,
+    startTime: '13:00',
+    endTime: '15:30',
+    description: '用户管理模块详细设计',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  // 保守对应（管理）
+  {
+    id: 3,
+    date: '2026-01-09',
+    projectGroup: '项目组A',
+    project: '日次定例会议',
+    phase: '-',
+    hours: 0.5,
+    startTime: '09:30',
+    endTime: '10:00',
+    description: '团队日常站会 - 工作进度同步',
+    workType: '通常',
+    workCategory: 'management',
+    subType: '日次定例',
+    jiraNumber: '团队日常站会',
+    modifiedAt: null
+  },
+  {
+    id: 4,
+    date: '2026-01-09',
+    projectGroup: '项目组A',
+    project: 'マネジメント会議',
+    phase: '-',
+    hours: 2.0,
+    startTime: '14:00',
+    endTime: '16:00',
+    description: '月度管理层会议 - 项目汇报和预算审查',
+    workType: '通常',
+    workCategory: 'management',
+    subType: 'マネジメント会議',
+    jiraNumber: '月度管理层会议',
+    modifiedAt: null
+  },
+  // 日合计: 8.0h
+  
+  // ========== 2026/01/08(木) ==========
+  // 一般案件对应
+  {
+    id: 5,
+    date: '2026-01-08',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '開発',
+    hours: 4.0,
+    startTime: '08:30',
+    endTime: '12:30',
+    description: '用户管理功能开发',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 6,
+    date: '2026-01-08',
+    projectGroup: '项目组C',
+    project: '项目C - 数据分析平台',
+    phase: '単体测试準備',
+    hours: 1.5,
+    startTime: '13:00',
+    endTime: '14:30',
+    description: '编写单元测试用例',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  // 残業
+  {
+    id: 7,
+    date: '2026-01-08',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '開発',
+    hours: 4.0,
+    startTime: '18:30',
+    endTime: '22:30',
+    description: '加班完成紧急功能开发',
+    workType: '残業',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  // 保守对应（JIRA/チャット）
+  {
+    id: 8,
+    date: '2026-01-08',
+    projectGroup: '项目组A',
+    project: 'JIRA对应',
+    phase: '-',
+    hours: 2.0,
+    startTime: '14:30',
+    endTime: '16:30',
+    description: 'JIRA-1234 生产环境Bug紧急修复',
+    workType: '通常',
+    workCategory: 'jira',
+    subType: 'JIRA对应',
+    jiraNumber: 'JIRA-1234',
+    modifiedAt: null
+  },
+  // 保守对应（管理）
+  {
+    id: 9,
+    date: '2026-01-08',
+    projectGroup: '项目组B',
+    project: 'マネジメント会議',
+    phase: '-',
+    hours: 1.5,
+    startTime: '15:00',
+    endTime: '16:30',
+    description: '季度战略规划会议',
+    workType: '通常',
+    workCategory: 'management',
+    subType: 'マネジメント会議',
+    jiraNumber: 'Q1战略规划会议',
+    modifiedAt: null
+  },
+  {
+    id: 10,
+    date: '2026-01-08',
+    projectGroup: '项目组B',
+    project: '日次定例会议',
+    phase: '-',
+    hours: 0.5,
+    startTime: '09:30',
+    endTime: '10:00',
+    description: 'Daily Scrum - 任务分配和障碍讨论',
+    workType: '通常',
+    workCategory: 'management',
+    subType: '日次定例',
+    jiraNumber: 'Daily Scrum',
+    modifiedAt: null
+  },
+  // 日合计: 13.5h (通常9.5h + 残業4.0h)
+  
+  // ========== 2026/01/07(水) ==========
+  // 一般案件对応
+  {
+    id: 11,
+    date: '2026-01-07',
+    projectGroup: '项目组B',
+    project: '项目B - 移动端开发',
+    phase: '開発',
+    hours: 5.0,
+    startTime: '08:30',
+    endTime: '13:30',
+    description: '首页UI组件开发',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 12,
+    date: '2026-01-07',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '単体测试実施',
+    hours: 2.0,
+    startTime: '13:30',
+    endTime: '15:30',
+    description: 'UI组件单元测试执行',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: '2026-01-07 16:00'
+  },
+  // 残業
+  {
+    id: 13,
+    date: '2026-01-07',
+    projectGroup: 'Enhance',
+    project: 'JIRA对应',
+    phase: '-',
+    hours: 3.5,
+    startTime: '20:00',
+    endTime: '23:30',
+    description: 'JIRA-9999 紧急故障加班处理',
+    workType: '残業',
+    workCategory: 'jira',
+    subType: 'JIRA对应',
+    jiraNumber: 'JIRA-9999',
+    modifiedAt: null
+  },
+  // 保守对应（JIRA/チャット）
+  {
+    id: 14,
+    date: '2026-01-07',
+    projectGroup: '项目组B',
+    project: 'JIRA对应',
+    phase: '-',
+    hours: 1.25,
+    startTime: '16:00',
+    endTime: '17:15',
+    description: 'JIRA-5678 用户反馈问题调查',
+    workType: '通常',
+    workCategory: 'jira',
+    subType: 'JIRA对应',
+    jiraNumber: 'JIRA-5678',
+    modifiedAt: null
+  },
+  // 保守对应（管理）
+  {
+    id: 15,
+    date: '2026-01-07',
+    projectGroup: '项目组A',
+    project: '内部管理工作',
+    phase: '-',
+    hours: 2.5,
+    startTime: '14:00',
+    endTime: '16:30',
+    description: '新员工培训 - 系统架构讲解',
+    workType: '通常',
+    workCategory: 'management',
+    subType: '内部管理',
+    jiraNumber: '新员工入职培训',
+    modifiedAt: null
+  },
+  // 日合计: 14.25h (通常10.75h + 残業3.5h)
+  
+  // ========== 2026/01/06(火) ==========
+  // 一般案件对応
+  {
+    id: 16,
+    date: '2026-01-06',
+    projectGroup: '项目组B',
+    project: '项目B - 移动端开发',
+    phase: '単体测试準備',
+    hours: 3.0,
+    startTime: '08:30',
+    endTime: '11:30',
+    description: '编写单元测试用例',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 17,
+    date: '2026-01-06',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '連結测试（内部）準備',
+    hours: 2.5,
+    startTime: '13:00',
+    endTime: '15:30',
+    description: '内部联结测试环境准备和测试数据准备',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  // 残業
+  {
+    id: 18,
+    date: '2026-01-06',
+    projectGroup: '项目组B',
+    project: 'JIRA对应',
+    phase: '-',
+    hours: 2.5,
+    startTime: '19:00',
+    endTime: '21:30',
+    description: 'JIRA-7777 加班处理生产Bug',
+    workType: '残業',
+    workCategory: 'jira',
+    subType: 'JIRA对应',
+    jiraNumber: 'JIRA-7777',
+    modifiedAt: null
+  },
+  // 保守对応（JIRA/チャット）
+  {
+    id: 19,
+    date: '2026-01-06',
+    projectGroup: '项目组C',
+    project: 'チャット对应',
+    phase: '-',
+    hours: 0.5,
+    startTime: '10:00',
+    endTime: '10:30',
+    description: '客户需求咨询チャット - 功能说明',
+    workType: '通常',
+    workCategory: 'jira',
+    subType: 'チャット对应',
+    jiraNumber: '客户需求咨询',
+    modifiedAt: null
+  },
+  // 保守对応（管理）
+  {
+    id: 20,
+    date: '2026-01-06',
+    projectGroup: '项目组C',
+    project: '週次定例会议',
+    phase: '-',
+    hours: 1.0,
+    startTime: '10:00',
+    endTime: '11:00',
+    description: '周例会 - 周报汇总和下周计划',
+    workType: '通常',
+    workCategory: 'management',
+    subType: '週次定例',
+    jiraNumber: '週次定例会',
+    modifiedAt: null
+  },
+  // 日合计: 9.5h (通常7.0h + 残業2.5h)
+  
+  // ========== 2026/01/05(月) ==========
+  // 一般案件对応
+  {
+    id: 21,
+    date: '2026-01-05',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '連結测试（内部）実施',
+    hours: 4.0,
+    startTime: '08:30',
+    endTime: '12:30',
+    description: '执行内部联结测试并记录Bug',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 22,
+    date: '2026-01-05',
+    projectGroup: '项目组C',
+    project: '项目C - 数据分析平台',
+    phase: '連結测试（外部）準備',
+    hours: 2.0,
+    startTime: '13:00',
+    endTime: '15:00',
+    description: '与外部系统对接测试准备',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  // 保守对応（JIRA/チャット）
+  {
+    id: 23,
+    date: '2026-01-05',
+    projectGroup: '项目组A',
+    project: 'チャット对应',
+    phase: '-',
+    hours: 0.75,
+    startTime: '11:00',
+    endTime: '11:45',
+    description: '技术问题チャット支持 - 接口调用异常',
+    workType: '通常',
+    workCategory: 'jira',
+    subType: 'チャット对应',
+    jiraNumber: '技术问题支持',
+    modifiedAt: null
+  },
+  // 保守对応（管理）
+  {
+    id: 24,
+    date: '2026-01-05',
+    projectGroup: '项目组B',
+    project: '内部管理工作',
+    phase: '-',
+    hours: 1.0,
+    startTime: '16:00',
+    endTime: '17:00',
+    description: '技术文档整理和知识库更新',
+    workType: '通常',
+    workCategory: 'management',
+    subType: '内部管理',
+    jiraNumber: '技术文档整理',
+    modifiedAt: null
+  },
+  // 日合计: 7.75h
+  
+  // ========== 2026/01/04(日) - 休日作业 ==========
+  // 一般案件对応
+  {
+    id: 25,
+    date: '2026-01-04',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '本番リリース実施',
+    hours: 5.0,
+    startTime: '10:00',
+    endTime: '15:00',
+    description: '周末生产环境发布和验证',
+    workType: '休日',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  // 保守对応（JIRA/チャット）
+  {
+    id: 26,
+    date: '2026-01-04',
+    projectGroup: '项目组B',
+    project: 'メール对应',
+    phase: '-',
+    hours: 1.0,
+    startTime: '09:00',
+    endTime: '10:00',
+    description: '处理客户邮件 - 需求变更确认',
+    workType: '休日',
+    workCategory: 'jira',
+    subType: 'メール对应',
+    jiraNumber: '需求变更确认',
+    modifiedAt: null
+  },
+  // 保守対応（管理）
+  {
+    id: 27,
+    date: '2026-01-04',
+    projectGroup: 'Enhance',
+    project: '内部管理工作',
+    phase: '-',
+    hours: 3.0,
+    startTime: '13:00',
+    endTime: '16:00',
+    description: '年度绩效评估面谈',
+    workType: '休日',
+    workCategory: 'management',
+    subType: '内部管理',
+    jiraNumber: '年度绩效评估',
+    modifiedAt: null
+  },
+  // 日合计: 9.0h (全部休日)
+  
+  // ========== 2026/01/03(土) - 休日作业 ==========
+  // 一般案件対応
+  {
+    id: 28,
+    date: '2026-01-03',
+    projectGroup: '项目组C',
+    project: '项目C - 数据分析平台',
+    phase: '連結测试（外部）実施',
+    hours: 3.0,
+    startTime: '10:00',
+    endTime: '13:00',
+    description: '外部API联结测试',
+    workType: '休日',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  // 保守対応（JIRA/チャット）
+  {
+    id: 29,
+    date: '2026-01-03',
+    projectGroup: 'Enhance',
+    project: 'メール对应',
+    phase: '-',
+    hours: 0.5,
+    startTime: '14:30',
+    endTime: '15:00',
+    description: '回复技术咨询邮件 - API文档说明',
+    workType: '休日',
+    workCategory: 'jira',
+    subType: 'メール对应',
+    jiraNumber: 'API文档咨询',
+    modifiedAt: null
+  },
+  // 保守対応（管理）
+  {
+    id: 30,
+    date: '2026-01-03',
+    projectGroup: '项目组C',
+    project: '其他管理工作',
+    phase: '-',
+    hours: 1.0,
+    startTime: '15:30',
+    endTime: '16:30',
+    description: '部门活动组织策划',
+    workType: '休日',
+    workCategory: 'management',
+    subType: 'そのた',
+    jiraNumber: '部门团建活动',
+    modifiedAt: null
+  },
+  // 日合计: 4.5h (全部休日)
+  
+  // ========== 2026/01/02(金) ==========
+  // 一般案件対応
+  {
+    id: 31,
+    date: '2026-01-02',
+    projectGroup: 'Enhance',
+    project: '项目D - 客户门户优化',
+    phase: 'システム間测试準備',
+    hours: 3.5,
+    startTime: '08:30',
+    endTime: '12:00',
+    description: '系统间测试环境搭建',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 32,
+    date: '2026-01-02',
+    projectGroup: 'Enhance',
+    project: '项目D - 客户门户优化',
+    phase: 'システム間测试実施',
+    hours: 2.5,
+    startTime: '13:00',
+    endTime: '15:30',
+    description: '执行系统间集成测试',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  // 保守対応（JIRA/チャット）
+  {
+    id: 33,
+    date: '2026-01-02',
+    projectGroup: '项目组A',
+    project: '保守作业',
+    phase: '-',
+    hours: 1.5,
+    startTime: '13:00',
+    endTime: '14:30',
+    description: '日常系统巡检和日志分析',
+    workType: '通常',
+    workCategory: 'jira',
+    subType: 'そのた',
+    jiraNumber: '系统巡检',
+    modifiedAt: null
+  },
+  // 保守対応（管理）
+  {
+    id: 34,
+    date: '2026-01-02',
+    projectGroup: '项目组A',
+    project: '其他管理工作',
+    phase: '-',
+    hours: 0.75,
+    startTime: '09:00',
+    endTime: '09:45',
+    description: '工时系统使用培训',
+    workType: '通常',
+    workCategory: 'management',
+    subType: 'そのた',
+    jiraNumber: '工时系统培训',
+    modifiedAt: null
+  },
+  // 日合计: 8.25h
+  
+  // ========== 更早日期的其他示例（覆盖所有22个工程） ==========
+  {
+    id: 35,
+    date: '2025-12-30',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '方式设计',
+    hours: 6.5,
+    startTime: '08:30',
+    endTime: '15:30',
+    description: '技术方案设计和架构评审',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 36,
+    date: '2025-12-30',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '基本設計',
+    hours: 2.0,
+    startTime: '15:30',
+    endTime: '17:30',
+    description: '数据库基本设计',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 37,
+    date: '2025-12-29',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '総合测试準備',
+    hours: 5.5,
+    startTime: '08:30',
+    endTime: '14:30',
+    description: '综合测试计划制定',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 38,
+    date: '2025-12-28',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: '総合测试実施',
+    hours: 8.5,
+    startTime: '08:30',
+    endTime: '18:00',
+    description: '执行综合测试全流程验证',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 39,
+    date: '2025-12-27',
+    projectGroup: '项目组B',
+    project: '项目B - 移动端开发',
+    phase: '性能测试準備',
+    hours: 4.0,
+    startTime: '08:30',
+    endTime: '13:00',
+    description: '性能测试工具配置和场景设计',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 40,
+    date: '2025-12-27',
+    projectGroup: '项目组B',
+    project: '项目B - 移动端开发',
+    phase: '性能测试実施',
+    hours: 4.0,
+    startTime: '13:00',
+    endTime: '17:30',
+    description: '并发压力测试和性能调优',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 41,
+    date: '2025-12-26',
+    projectGroup: '项目组C',
+    project: '项目C - 数据分析平台',
+    phase: 'リリースリハ準備',
+    hours: 3.5,
+    startTime: '08:30',
+    endTime: '12:30',
+    description: '发布演练环境准备和流程检查',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 42,
+    date: '2025-12-26',
+    projectGroup: '项目组C',
+    project: '项目C - 数据分析平台',
+    phase: 'リリースリハ実施',
+    hours: 4.0,
+    startTime: '13:00',
+    endTime: '17:30',
+    description: '执行发布演练并记录问题点',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 43,
+    date: '2025-12-25',
+    projectGroup: 'Enhance',
+    project: '项目D - 客户门户优化',
+    phase: '本番リリース準備',
+    hours: 6.0,
+    startTime: '08:30',
+    endTime: '15:00',
+    description: '生产环境发布准备、数据备份',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 44,
+    date: '2025-12-24',
+    projectGroup: '项目组A',
+    project: '项目A - ERP系统升级',
+    phase: 'マネージャー（案件推進）',
+    hours: 7.5,
+    startTime: '08:30',
+    endTime: '16:30',
+    description: '项目进度管理、风险评估和团队协调',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+  {
+    id: 45,
+    date: '2025-12-23',
+    projectGroup: '项目组B',
+    project: '项目B - 移动端开发',
+    phase: 'バッファ',
+    hours: 5.0,
+    startTime: '08:30',
+    endTime: '14:00',
+    description: '缓冲时间 - 处理突发问题和技术调研',
+    workType: '通常',
+    workCategory: 'normal',
+    modifiedAt: null
+  },
+];
