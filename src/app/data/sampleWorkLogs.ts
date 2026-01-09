@@ -63,7 +63,24 @@ export const SAMPLE_WORK_LOGS = [
     jiraNumber: '月度管理层会议',
     modifiedAt: null
   },
-  // 日合计: 8.0h
+  // 成长与创新
+  {
+    id: 46,
+    date: '2026-01-09',
+    projectGroup: '项目组A',
+    project: '技术预研',
+    phase: '-',
+    hours: 1.0,
+    startTime: '16:00',
+    endTime: '17:00',
+    description: 'AI代码辅助工具调研与实践 - GitHub Copilot评估',
+    workType: '通常',
+    workCategory: 'innovation',
+    subType: '技术预研',
+    jiraNumber: 'AI代码辅助工具调研',
+    modifiedAt: null
+  },
+  // 日合计: 9.0h
   
   // ========== 2026/01/08(木) ==========
   // 一般案件对应
@@ -160,7 +177,24 @@ export const SAMPLE_WORK_LOGS = [
     jiraNumber: 'Daily Scrum',
     modifiedAt: null
   },
-  // 日合计: 13.5h (通常9.5h + 残業4.0h)
+  // 成长与创新
+  {
+    id: 47,
+    date: '2026-01-08',
+    projectGroup: '项目组B',
+    project: '效率工具开发',
+    phase: '-',
+    hours: 1.0,
+    startTime: '17:00',
+    endTime: '18:00',
+    description: '开发自动化测试报告生成脚本',
+    workType: '通常',
+    workCategory: 'innovation',
+    subType: '效率工具开发',
+    jiraNumber: '自动化测试报告生成器',
+    modifiedAt: null
+  },
+  // 日合计: 14.5h (通常10.5h + 残業4.0h)
   
   // ========== 2026/01/07(水) ==========
   // 一般案件对応
@@ -243,7 +277,23 @@ export const SAMPLE_WORK_LOGS = [
     jiraNumber: '新员工入职培训',
     modifiedAt: null
   },
-  // 日合计: 14.25h (通常10.75h + 残業3.5h)
+  {
+    id: 48,
+    date: '2026-01-07',
+    projectGroup: 'Enhance',
+    project: '管理与文化',
+    phase: '-',
+    hours: 0.75,
+    startTime: '17:15',
+    endTime: '18:00',
+    description: '参与技术分享会 - React 19新特性学习',
+    workType: '通常',
+    workCategory: 'innovation',
+    subType: '管理与文化',
+    jiraNumber: '技术分享会',
+    modifiedAt: null
+  },
+  // 日合计: 15.0h (通常11.5h + 残業3.5h)
   
   // ========== 2026/01/06(火) ==========
   // 一般案件对応
@@ -326,7 +376,23 @@ export const SAMPLE_WORK_LOGS = [
     jiraNumber: '週次定例会',
     modifiedAt: null
   },
-  // 日合计: 9.5h (通常7.0h + 残業2.5h)
+  {
+    id: 49,
+    date: '2026-01-06',
+    projectGroup: '项目组C',
+    project: '职业进修',
+    phase: '-',
+    hours: 1.0,
+    startTime: '17:00',
+    endTime: '18:00',
+    description: 'TypeScript高级特性在线课程学习',
+    workType: '通常',
+    workCategory: 'innovation',
+    subType: '职业进修',
+    jiraNumber: 'TypeScript高级特性课程',
+    modifiedAt: null
+  },
+  // 日合计: 10.5h (通常8.0h + 残業2.5h)
   
   // ========== 2026/01/05(月) ==========
   // 一般案件对応

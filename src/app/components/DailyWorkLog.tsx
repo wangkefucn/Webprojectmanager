@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Plus, Clock, Save, BarChart3, ChevronDown, ChevronUp, Edit, History, MessageSquare, Users, AlertCircle, CheckCircle2, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Clock, Save, BarChart3, ChevronDown, ChevronUp, Edit, History, MessageSquare, Users, AlertCircle, CheckCircle2, Calendar as CalendarIcon, Info, Lightbulb } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { DateRangePicker } from './DateRangePicker';
 import { SAMPLE_WORK_LOGS } from '../data/sampleWorkLogs';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 interface DailyWorkLogProps {
   user: { name: string; role: string; department: string };
@@ -175,6 +176,14 @@ export function DailyWorkLog({ user }: DailyWorkLogProps) {
                           badge: 'bg-gradient-to-r from-green-500 to-emerald-600 text-white',
                           label: '保守对应（管理）'
                         };
+                      } else if (log.workCategory === 'innovation') {
+                        return {
+                          gradient: 'from-cyan-50/60 to-blue-50/60',
+                          border: 'border-cyan-100/40',
+                          icon: <Lightbulb className="w-5 h-5 text-cyan-600" />,
+                          badge: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white',
+                          label: '成长与创新'
+                        };
                       } else {
                         return {
                           gradient: 'from-indigo-50/40 to-purple-50/40',
@@ -201,7 +210,7 @@ export function DailyWorkLog({ user }: DailyWorkLogProps) {
                                 {styles.icon}
                               </div>
                               <span className={`text-[10px] px-2 py-0.5 rounded-full ${styles.badge} font-semibold`}>
-                                {log.workCategory === 'jira' ? 'JIRA/Chat' : log.workCategory === 'management' ? '管理' : '开发'}
+                                {log.workCategory === 'jira' ? 'JIRA/Chat' : log.workCategory === 'management' ? '管理' : log.workCategory === 'innovation' ? '创新' : '开发'}
                               </span>
                             </div>
                             
@@ -210,6 +219,11 @@ export function DailyWorkLog({ user }: DailyWorkLogProps) {
                   {/* 主要内容 */}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
+                      {/* 项目组 */}
+                      <span className="text-xs px-2.5 py-1 bg-teal-100 text-teal-700 rounded-lg font-bold border border-teal-200">
+                        {log.projectGroup}
+                      </span>
+                      <span className="text-gray-400">·</span>
                       <h3 className="font-semibold text-gray-800 text-base">{log.project}</h3>
                       
                       {/* 一般案件：显示工程 */}
@@ -248,6 +262,25 @@ export function DailyWorkLog({ user }: DailyWorkLogProps) {
                             <>
                               <span className="text-gray-400">→</span>
                               <span className="text-xs px-2.5 py-1 bg-white/80 text-green-800 rounded-lg font-bold border border-green-200">
+                                {log.jiraNumber}
+                              </span>
+                            </>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* 成长与创新：显示类型和主题 */}
+                      {log.workCategory === 'innovation' && log.subType && (
+                        <>
+                          <span className="text-gray-400">|</span>
+                          <span className="text-xs px-2.5 py-1 bg-cyan-100 text-cyan-700 rounded-lg font-medium flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3" />
+                            {log.subType}
+                          </span>
+                          {log.jiraNumber && (
+                            <>
+                              <span className="text-gray-400">→</span>
+                              <span className="text-xs px-2.5 py-1 bg-white/80 text-cyan-800 rounded-lg font-bold border border-cyan-200">
                                 {log.jiraNumber}
                               </span>
                             </>
@@ -318,7 +351,7 @@ export function DailyWorkLog({ user }: DailyWorkLogProps) {
 
 function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   // ADD_DIALOG_MARKER
-  const [workCategory, setWorkCategory] = useState<'normal' | 'jira' | 'management'>('normal');
+  const [workCategory, setWorkCategory] = useState<'normal' | 'jira' | 'management' | 'innovation'>('normal');
   const [workType, setWorkType] = useState<'通常' | '残業' | '休日'>('通常');
   const [projectGroup, setProjectGroup] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
@@ -364,6 +397,12 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
   const projectGroups = ['项目组A', '项目组B', '项目组C', 'Enhance'];
   const jiraTypes = ['JIRA对应', 'チャット对应', 'メール对应', 'そのた'];
   const managementTypes = ['マネジメント会議', '日次定例', '週次定例', '内部管理', 'そのた'];
+  const innovationTypes = [
+    '技术预研：学习 AI 工具、新框架、解决疑难 Bug 的新技术方案等。',
+    '管理与文化：公司年会策划、团队分享会、内政事务支持等。',
+    '职业进修：语言学习、考证准备、专业技能培训等。',
+    '效率工具开发：针对日常重复工作的自动化脚本或小工具开发等。'
+  ];
   // ADD_MANAGEMENT_INPUT_MARKER
 
   // 切换时间段选中状态  
@@ -482,7 +521,7 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
           {/* 作业分类 */}
           <div className="backdrop-blur-lg bg-gradient-to-r from-purple-50/80 to-pink-50/80 rounded-xl p-3 border border-purple-100/50 shadow-inner">
             <label className="block text-xs mb-2 text-gray-700 font-bold">作业分类</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <button
                 onClick={() => setWorkCategory('normal')}
                 className={`p-3 rounded-xl transition-all duration-300 font-medium border-2 shadow-lg whitespace-nowrap ${
@@ -516,6 +555,56 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
                 <div className="text-base font-bold mb-1">保守对应（管理）</div>
                 <div className="text-xs opacity-90">会议和管理工作</div>
               </button>
+              
+              {/* 新增：成长与创新按钮 */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setWorkCategory('innovation')}
+                    className={`p-3 rounded-xl transition-all duration-300 font-medium border-2 shadow-lg whitespace-nowrap relative ${
+                      workCategory === 'innovation'
+                        ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-2xl scale-105 border-cyan-500 transform'
+                        : 'backdrop-blur-lg bg-white/80 text-gray-700 hover:bg-white hover:scale-102 border-white/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Lightbulb className="w-4 h-4" />
+                      <div className="text-base font-bold">成长与创新</div>
+                      <Info className="w-3 h-3 opacity-60" />
+                    </div>
+                    <div className="text-xs opacity-90">个人成长与探索</div>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="bottom" 
+                  className="max-w-2xl backdrop-blur-xl bg-gradient-to-br from-cyan-500/95 to-blue-600/95 text-white border border-white/20 shadow-2xl p-4"
+                  sideOffset={8}
+                >
+                  <div className="space-y-3 text-left">
+                    <div className="font-bold text-base border-b border-white/30 pb-2">
+                      ■ 关于"成长与创新"分类的使用说明
+                    </div>
+                    <p className="text-xs leading-relaxed">
+                      持续的自我进化是团队核心竞争力的源泉。本分类用于记录员工在完成业务交付之余，为提升专业深度、探索前沿技术（如 AI 应用）及建设企业文化所投入的时间。
+                    </p>
+                    <div>
+                      <div className="font-semibold text-sm mb-1.5">记录原则：</div>
+                      <div className="space-y-1 text-xs pl-3">
+                        <div>① <span className="font-semibold">自主性：</span> 鼓励探索与当前业务相关的技术前沿或公司组织的专项活动。</div>
+                        <div>② <span className="font-semibold">透明性：</span> 请在"作业内容"中记录具体活动（例如：AI提效实践 或 XX 模块代码重构方案调研）。</div>
+                        <div>③ <span className="font-semibold">价值导向：</span> 今天的个人成长即是明天部门创新的基石。</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm mb-1.5">管理细则：</div>
+                      <div className="space-y-1 text-xs pl-3">
+                        <div>① <span className="font-semibold">弹性时长：</span> 项目组提倡"精进不辍"。原则上，建议每位成员每月在此项投入的时间比例为总工数的 5%（暂定约 8 小时）。</div>
+                        <div>② <span className="font-semibold">成果共享：</span> 鼓励"一人所得，全员受益"。在本分类下产生的学习心得、AI 提效工具、或技术调研报告，将通过文档化，分享会的方式沉淀。</div>
+                      </div>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -627,6 +716,51 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
                     value={jiraNumber}
                     onChange={(e) => setJiraNumber(e.target.value)}
                     placeholder="例：Q1项目复盘会议、新员工入职培训..."
+                    className="backdrop-blur-lg bg-white/80 border-white/50"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {workCategory === 'innovation' && (
+            <div className="backdrop-blur-lg bg-gradient-to-r from-violet-50/80 to-blue-50/80 rounded-xl p-3 border border-violet-100/50 shadow-inner">
+              <label className="block text-xs mb-2 text-gray-700 font-bold">成长与创新类型</label>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {innovationTypes.map((type) => {
+                  const typeName = type.split('：')[0];
+                  const typeDesc = type.split('：')[1];
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedSubType(typeName)}
+                      className={`px-3 py-2.5 rounded-lg transition-all duration-200 font-medium text-left ${
+                        selectedSubType === typeName
+                          ? 'bg-gradient-to-r from-violet-500 to-blue-600 text-white shadow-lg scale-105'
+                          : 'backdrop-blur-lg bg-white/80 text-gray-700 hover:bg-white border border-white/50'
+                      }`}
+                    >
+                      <div className="text-sm font-bold mb-0.5">{typeName}</div>
+                      <div className="text-xs opacity-75 leading-tight">{typeDesc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedSubType && (
+                <div>
+                  <label className="block text-xs mb-1.5 text-gray-700 font-semibold">
+                    活动主题 <span className="text-gray-400">(可选)</span>
+                  </label>
+                  <Input
+                    value={jiraNumber}
+                    onChange={(e) => setJiraNumber(e.target.value)}
+                    placeholder={
+                      selectedSubType === '技术预研' ? '例：探索 ChatGPT API 在代码审查中的应用...' :
+                      selectedSubType === '管理与文化' ? '例：组织部门团建活动、年会策划...' :
+                      selectedSubType === '职业进修' ? '例：AWS 认证备考、日语 N2 学习...' :
+                      selectedSubType === '效率工具开发' ? '例：自动化部署脚本优化、工时填报助手...' :
+                      '输入活动主题...'
+                    }
                     className="backdrop-blur-lg bg-white/80 border-white/50"
                   />
                 </div>
@@ -774,7 +908,11 @@ function AddWorkLogDialog({ open, onClose }: { open: boolean; onClose: () => voi
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="请输入作业内容描述..."
+              placeholder={
+                workCategory === 'innovation' 
+                  ? '请简要描述您的提升内容或产出（例如：AI提效实践，XX系统重构调研）'
+                  : '请输入作业内容描述...'
+              }
               rows={2}
               className="w-full px-3 py-2 backdrop-blur-lg bg-white/80 border border-white/50 rounded-lg text-gray-800 resize-none font-medium text-sm"
             />
@@ -799,7 +937,7 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
   if (!log) return null;
   // EDIT_DIALOG_START
 
-  const [workCategory, setWorkCategory] = useState<'normal' | 'jira' | 'management'>(log.category || 'normal');
+  const [workCategory, setWorkCategory] = useState<'normal' | 'jira' | 'management' | 'innovation'>(log.category || 'normal');
   const [workType, setWorkType] = useState<'通常' | '残業' | '休日'>(log.type || '通常');
   const [projectGroup, setProjectGroup] = useState(log.projectGroup || '');
   const [selectedProject, setSelectedProject] = useState(log.project || '');
@@ -845,6 +983,12 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
   const projectGroups = ['项目组A', '项目组B', '项目组C', 'Enhance'];
   const jiraTypes = ['JIRA对应', 'チャット对应', 'メール对应', 'そのた'];
   const managementTypes = ['マネジメント会議', '日次定例', '週次定例', '内部管理', 'そのた'];
+  const innovationTypes = [
+    '技术预研：学习 AI 工具、新框架、解决疑难 Bug 的新技术方案等。',
+    '管理与文化：公司年会策划、团队分享会、内政事务支持等。',
+    '职业进修：语言学习、考证准备、专业技能培训等。',
+    '效率工具开发：针对日常重复工作的自动化脚本或小工具开发等。'
+  ];
   // EDITDIALOG_VARS
 
   // 切换时间段选中状态
@@ -960,7 +1104,7 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
           {/* 作业分类 */}
           <div className="backdrop-blur-lg bg-gradient-to-r from-purple-50/80 to-pink-50/80 rounded-xl p-3 border border-purple-100/50 shadow-inner">
             <label className="block text-xs mb-2 text-gray-700 font-bold">作业分类</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <button
                 onClick={() => setWorkCategory('normal')}
                 className={`p-3 rounded-xl transition-all duration-300 font-medium border-2 shadow-lg whitespace-nowrap ${
@@ -994,6 +1138,56 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
                 <div className="text-base font-bold mb-1">保守对应（管理）</div>
                 <div className="text-xs opacity-90">会议和管理工作</div>
               </button>
+              
+              {/* 新增：成长与创新按钮 */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setWorkCategory('innovation')}
+                    className={`p-3 rounded-xl transition-all duration-300 font-medium border-2 shadow-lg whitespace-nowrap relative ${
+                      workCategory === 'innovation'
+                        ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-2xl scale-105 border-cyan-500 transform'
+                        : 'backdrop-blur-lg bg-white/80 text-gray-700 hover:bg-white hover:scale-102 border-white/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Lightbulb className="w-4 h-4" />
+                      <div className="text-base font-bold">成长与创新</div>
+                      <Info className="w-3 h-3 opacity-60" />
+                    </div>
+                    <div className="text-xs opacity-90">个人成长与探索</div>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="bottom" 
+                  className="max-w-2xl backdrop-blur-xl bg-gradient-to-br from-cyan-500/95 to-blue-600/95 text-white border border-white/20 shadow-2xl p-4"
+                  sideOffset={8}
+                >
+                  <div className="space-y-3 text-left">
+                    <div className="font-bold text-base border-b border-white/30 pb-2">
+                      ■ 关于"成长与创新"分类的使用说明
+                    </div>
+                    <p className="text-xs leading-relaxed">
+                      持续的自我进化是团队核心竞争力的源泉。本分类用于记录员工在完成业务交付之余，为提升专业深度、探索前沿技术（如 AI 应用）及建设企业文化所投入的时间。
+                    </p>
+                    <div>
+                      <div className="font-semibold text-sm mb-1.5">记录原则：</div>
+                      <div className="space-y-1 text-xs pl-3">
+                        <div>① <span className="font-semibold">自主性：</span> 鼓励探索与当前业务相关的技术前沿或公司组织的专项活动。</div>
+                        <div>② <span className="font-semibold">透明性：</span> 请在"作业内容"中记录具体活动（例如：AI提效实践 或 XX 模块代码重构方案调研）。</div>
+                        <div>③ <span className="font-semibold">价值导向：</span> 今天的个人成长即是明天部门创新的基石。</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm mb-1.5">管理细则：</div>
+                      <div className="space-y-1 text-xs pl-3">
+                        <div>① <span className="font-semibold">弹性时长：</span> 项目组提倡"精进不辍"。原则上，建议每位成员每月在此项投入的时间比例为总工数的 5%（暂定约 8 小时）。</div>
+                        <div>② <span className="font-semibold">成果共享：</span> 鼓励"一人所得，全员受益"。在本分类下产生的学习心得、AI 提效工具、或技术调研报告，将通过文档化，分享会的方式沉淀。</div>
+                      </div>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -1105,6 +1299,51 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
                     value={jiraNumber}
                     onChange={(e) => setJiraNumber(e.target.value)}
                     placeholder="例：Q1项目复盘会议、新员工入职培训..."
+                    className="backdrop-blur-lg bg-white/80 border-white/50"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {workCategory === 'innovation' && (
+            <div className="backdrop-blur-lg bg-gradient-to-r from-violet-50/80 to-blue-50/80 rounded-xl p-3 border border-violet-100/50 shadow-inner">
+              <label className="block text-xs mb-2 text-gray-700 font-bold">成长与创新类型</label>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {innovationTypes.map((type) => {
+                  const typeName = type.split('：')[0];
+                  const typeDesc = type.split('：')[1];
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedSubType(typeName)}
+                      className={`px-3 py-2.5 rounded-lg transition-all duration-200 font-medium text-left ${
+                        selectedSubType === typeName
+                          ? 'bg-gradient-to-r from-violet-500 to-blue-600 text-white shadow-lg scale-105'
+                          : 'backdrop-blur-lg bg-white/80 text-gray-700 hover:bg-white border border-white/50'
+                      }`}
+                    >
+                      <div className="text-sm font-bold mb-0.5">{typeName}</div>
+                      <div className="text-xs opacity-75 leading-tight">{typeDesc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedSubType && (
+                <div>
+                  <label className="block text-xs mb-1.5 text-gray-700 font-semibold">
+                    活动主题 <span className="text-gray-400">(可选)</span>
+                  </label>
+                  <Input
+                    value={jiraNumber}
+                    onChange={(e) => setJiraNumber(e.target.value)}
+                    placeholder={
+                      selectedSubType === '技术预研' ? '例：探索 ChatGPT API 在代码审查中的应用...' :
+                      selectedSubType === '管理与文化' ? '例：组织部门团建活动、年会策划...' :
+                      selectedSubType === '职业进修' ? '例：AWS 认证备考、日语 N2 学习...' :
+                      selectedSubType === '效率工具开发' ? '例：自动化部署脚本优化、工时填报助手...' :
+                      '输入活动主题...'
+                    }
                     className="backdrop-blur-lg bg-white/80 border-white/50"
                   />
                 </div>
