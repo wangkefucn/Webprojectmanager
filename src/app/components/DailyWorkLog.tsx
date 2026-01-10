@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Plus, Clock, Save, BarChart3, ChevronDown, ChevronUp, Edit, History, MessageSquare, Users, AlertCircle, CheckCircle2, Calendar as CalendarIcon, Info, Lightbulb } from 'lucide-react';
+import { Plus, Clock, Save, BarChart3, ChevronDown, ChevronUp, Edit, History, MessageSquare, Users, AlertCircle, CheckCircle2, Calendar as CalendarIcon, Info, Lightbulb, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { DateRangePicker } from './DateRangePicker';
 import { SAMPLE_WORK_LOGS } from '../data/sampleWorkLogs';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface DailyWorkLogProps {
   user: { name: string; role: string; department: string };
@@ -1512,23 +1513,147 @@ function EditWorkLogDialog({ open, onClose, log }: { open: boolean; onClose: () 
 }
 
 function StatsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  // 统计时间范围
-  const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-  const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
-  const [statsStartDate, setStatsStartDate] = useState(firstDayOfMonth);
-  const [statsEndDate, setStatsEndDate] = useState(lastDayOfMonth);
+  // 统计时间范围 - 默认使用当前薪资周期
+  const getCurrentSalaryPeriod = () => {
+    const now = new Date();
+    const currentDay = now.getDate();
+    
+    let start: Date, end: Date;
+    
+    if (currentDay >= 21) {
+      start = new Date(now.getFullYear(), now.getMonth(), 21);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 20);
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 21);
+      end = new Date(now.getFullYear(), now.getMonth(), 20);
+    }
+    
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    };
+  };
+
+  const salaryPeriod = getCurrentSalaryPeriod();
+  const [statsStartDate, setStatsStartDate] = useState(salaryPeriod.start);
+  const [statsEndDate, setStatsEndDate] = useState(salaryPeriod.end);
+
+  // 计算统计数据
+  const calculateStats = () => {
+    const filteredLogs = SAMPLE_WORK_LOGS.filter(log => 
+      log.date >= statsStartDate && log.date <= statsEndDate
+    );
+
+    // 总工时
+    const totalHours = filteredLogs.reduce((sum, log) => sum + log.hours, 0);
+
+    // 工作天数
+    const workDays = new Set(filteredLogs.map(log => log.date)).size;
+
+    // 平均每日工时
+    const avgHours = workDays > 0 ? totalHours / workDays : 0;
+
+    // 加班工时（假设超过8小时的部分为加班）
+    const dailyHours = new Map<string, number>();
+    filteredLogs.forEach(log => {
+      const current = dailyHours.get(log.date) || 0;
+      dailyHours.set(log.date, current + log.hours);
+    });
+    const overtimeHours = Array.from(dailyHours.values()).reduce(
+      (sum, hours) => sum + Math.max(0, hours - 8), 0
+    );
+
+    // 按作业分类统计
+    const categoryStats = new Map<string, number>();
+    filteredLogs.forEach(log => {
+      const current = categoryStats.get(log.workCategory) || 0;
+      categoryStats.set(log.workCategory, current + log.hours);
+    });
+
+    // 按项目组统计
+    const projectGroupStats = new Map<string, number>();
+    filteredLogs.forEach(log => {
+      const current = projectGroupStats.get(log.projectGroup) || 0;
+      projectGroupStats.set(log.projectGroup, current + log.hours);
+    });
+
+    // 按项目统计（Top 5）
+    const projectStats = new Map<string, number>();
+    filteredLogs.forEach(log => {
+      const current = projectStats.get(log.project) || 0;
+      projectStats.set(log.project, current + log.hours);
+    });
+    const topProjects = Array.from(projectStats.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    return {
+      totalHours,
+      avgHours,
+      overtimeHours,
+      workDays,
+      categoryStats,
+      projectGroupStats,
+      topProjects,
+    };
+  };
+
+  const stats = calculateStats();
+
+  // 作业分类饼图数据
+  const categoryData = [
+    { name: '一般案件对应', value: stats.categoryStats.get('normal') || 0, color: '#8b5cf6' },
+    { name: 'JIRA/チャット', value: stats.categoryStats.get('jira') || 0, color: '#f97316' },
+    { name: '保守对应（管理）', value: stats.categoryStats.get('management') || 0, color: '#10b981' },
+    { name: '成长与创新', value: stats.categoryStats.get('innovation') || 0, color: '#06b6d4' },
+  ].filter(item => item.value > 0);
+
+  // 项目组柱状图数据
+  const projectGroupData = Array.from(stats.projectGroupStats.entries()).map(([name, value]) => ({
+    name,
+    hours: value,
+  }));
+
+  // 自定义Tooltip
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="backdrop-blur-xl bg-white/95 p-3 rounded-lg shadow-xl border border-purple-200">
+          <p className="text-sm font-bold text-gray-800">{payload[0].name}</p>
+          <p className="text-sm text-purple-600 font-semibold">
+            {payload[0].value.toFixed(1)}小时
+            {stats.totalHours > 0 && (
+              <span className="text-xs text-gray-600 ml-1">
+                ({((payload[0].value / stats.totalHours) * 100).toFixed(1)}%)
+              </span>
+            )}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="backdrop-blur-2xl bg-white/95 border-white/20 shadow-2xl !w-[96vw] !max-w-[96vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">工时统计分析</DialogTitle>
-          <DialogDescription className="text-xs text-gray-500">查看指定时间范围的工作时间统计数据</DialogDescription>
+          <DialogTitle className="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <BarChart3 className="w-6 h-6 text-purple-600" />
+            工时统计分析
+          </DialogTitle>
+          <DialogDescription className="text-sm text-gray-600">
+            查看指定时间范围内的详细工时统计数据，包括作业分类、项目分布等多维度分析
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 py-2">
+        
+        <div className="space-y-4 py-3">
           {/* 时间范围选择 */}
-          <div className="backdrop-blur-lg bg-gradient-to-r from-blue-50/80 to-cyan-50/80 rounded-xl p-3 border border-blue-100/50 shadow-inner">
-            <label className="block text-xs mb-2 text-gray-700 font-bold">统计时间范围</label>
+          <div className="backdrop-blur-lg bg-gradient-to-r from-purple-50/80 to-pink-50/80 rounded-2xl p-4 border border-purple-100/50 shadow-lg">
+            <label className="flex items-center gap-2 text-sm mb-3 text-gray-800 font-bold">
+              <CalendarIcon className="w-4 h-4 text-purple-600" />
+              统计时间范围
+            </label>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs mb-1.5 text-gray-600 font-semibold">开始日期</label>
@@ -1536,7 +1661,7 @@ function StatsDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
                   type="date"
                   value={statsStartDate}
                   onChange={(e) => setStatsStartDate(e.target.value)}
-                  className="backdrop-blur-lg bg-white/80 border-white/50 font-medium"
+                  className="backdrop-blur-lg bg-white/90 border-purple-200 font-medium"
                 />
               </div>
               <div>
@@ -1545,53 +1670,180 @@ function StatsDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
                   type="date"
                   value={statsEndDate}
                   onChange={(e) => setStatsEndDate(e.target.value)}
-                  className="backdrop-blur-lg bg-white/80 border-white/50 font-medium"
+                  className="backdrop-blur-lg bg-white/90 border-purple-200 font-medium"
                 />
               </div>
             </div>
           </div>
 
-          {/* 统计数据 */}
-          <div className="grid grid-cols-4 gap-3">
-            <div className="backdrop-blur-lg bg-gradient-to-r from-blue-50/80 to-cyan-50/80 rounded-xl p-4 border border-blue-100/50 shadow-inner">
-              <p className="text-xs text-gray-600 mb-2 font-semibold">总工时</p>
-              <p className="text-3xl font-bold text-blue-600">168.5h</p>
+          {/* 核心指标卡片 */}
+          <div className="grid grid-cols-4 gap-4">
+            <div className="backdrop-blur-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl p-5 border border-blue-200/50 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-700 font-semibold">总工时</p>
+                <Clock className="w-5 h-5 text-blue-600" />
+              </div>
+              <p className="text-4xl font-bold text-blue-600 mb-1">{stats.totalHours.toFixed(1)}h</p>
+              <p className="text-xs text-gray-600">统计期间累计工时</p>
             </div>
-            <div className="backdrop-blur-lg bg-gradient-to-r from-green-50/80 to-emerald-50/80 rounded-xl p-4 border border-green-100/50 shadow-inner">
-              <p className="text-xs text-gray-600 mb-2 font-semibold">平均每日</p>
-              <p className="text-3xl font-bold text-green-600">8.4h</p>
+            
+            <div className="backdrop-blur-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl p-5 border border-green-200/50 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-700 font-semibold">平均每日</p>
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
+              <p className="text-4xl font-bold text-green-600 mb-1">{stats.avgHours.toFixed(1)}h</p>
+              <p className="text-xs text-gray-600">日均工作时长</p>
             </div>
-            <div className="backdrop-blur-lg bg-gradient-to-r from-orange-50/80 to-red-50/80 rounded-xl p-4 border border-orange-100/50 shadow-inner">
-              <p className="text-xs text-gray-600 mb-2 font-semibold">加班工时</p>
-              <p className="text-3xl font-bold text-orange-600">15.5h</p>
+            
+            <div className="backdrop-blur-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-2xl p-5 border border-orange-200/50 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-700 font-semibold">加班工时</p>
+                <AlertCircle className="w-5 h-5 text-orange-600" />
+              </div>
+              <p className="text-4xl font-bold text-orange-600 mb-1">{stats.overtimeHours.toFixed(1)}h</p>
+              <p className="text-xs text-gray-600">超过8小时/天的部分</p>
             </div>
-            <div className="backdrop-blur-lg bg-gradient-to-r from-purple-50/80 to-pink-50/80 rounded-xl p-4 border border-purple-100/50 shadow-inner">
-              <p className="text-xs text-gray-600 mb-2 font-semibold">工作天数</p>
-              <p className="text-3xl font-bold text-purple-600">20天</p>
+            
+            <div className="backdrop-blur-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl p-5 border border-purple-200/50 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-700 font-semibold">工作天数</p>
+                <CalendarIcon className="w-5 h-5 text-purple-600" />
+              </div>
+              <p className="text-4xl font-bold text-purple-600 mb-1">{stats.workDays}天</p>
+              <p className="text-xs text-gray-600">有记录的工作日</p>
             </div>
           </div>
 
-          {/* 项目分布 */}
-          <div className="backdrop-blur-lg bg-gradient-to-r from-indigo-50/80 to-purple-50/80 rounded-xl p-3 border border-indigo-100/50 shadow-inner">
-            <label className="block text-xs mb-2 text-gray-700 font-bold">项目工时分布</label>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-2 bg-white/60 rounded-lg">
-                <span className="text-sm text-gray-700 font-medium">项目A - ERP系统升级</span>
-                <span className="text-sm font-bold text-indigo-600">85.5h (50.7%)</span>
+          {/* 图表区域 */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* 作业分类饼图 */}
+            <div className="backdrop-blur-lg bg-gradient-to-br from-indigo-50/80 to-purple-50/80 rounded-2xl p-5 border border-indigo-100/50 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <PieChartIcon className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-bold text-gray-800">作业分类工时分布</h3>
               </div>
-              <div className="flex items-center justify-between p-2 bg-white/60 rounded-lg">
-                <span className="text-sm text-gray-700 font-medium">项目B - 移动端开发</span>
-                <span className="text-sm font-bold text-indigo-600">65.0h (38.6%)</span>
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                    outerRadius={90}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* 项目组柱状图 */}
+            <div className="backdrop-blur-lg bg-gradient-to-br from-teal-50/80 to-cyan-50/80 rounded-2xl p-5 border border-teal-100/50 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-5 h-5 text-teal-600" />
+                <h3 className="text-sm font-bold text-gray-800">项目组工时统计</h3>
               </div>
-              <div className="flex items-center justify-between p-2 bg-white/60 rounded-lg">
-                <span className="text-sm text-gray-700 font-medium">JIRA/チャット对应</span>
-                <span className="text-sm font-bold text-indigo-600">18.0h (10.7%)</span>
-              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={projectGroupData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <RechartsTooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="backdrop-blur-xl bg-white/95 p-3 rounded-lg shadow-xl border border-teal-200">
+                            <p className="text-sm font-bold text-gray-800">{payload[0].payload.name}</p>
+                            <p className="text-sm text-teal-600 font-semibold">
+                              {payload[0].value?.toFixed(1)}小时
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="hours" fill="#14b8a6" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Top 5 项目工时明细 */}
+          <div className="backdrop-blur-lg bg-gradient-to-br from-pink-50/80 to-rose-50/80 rounded-2xl p-5 border border-pink-100/50 shadow-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="w-5 h-5 text-pink-600" />
+              <h3 className="text-sm font-bold text-gray-800">Top 5 项目工时明细</h3>
+            </div>
+            <div className="space-y-3">
+              {stats.topProjects.map(([project, hours], index) => {
+                const percentage = (hours / stats.totalHours) * 100;
+                return (
+                  <div key={project} className="relative">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 text-white text-xs font-bold">
+                          {index + 1}
+                        </span>
+                        <span className="text-sm text-gray-800 font-medium">{project}</span>
+                      </div>
+                      <span className="text-sm font-bold text-pink-600">
+                        {hours.toFixed(1)}h ({percentage.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <div className="h-2 bg-white/60 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-pink-500 to-rose-600 rounded-full transition-all duration-500"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 作业分类详细数据 */}
+          <div className="grid grid-cols-4 gap-3">
+            {categoryData.map((category) => {
+              const percentage = (category.value / stats.totalHours) * 100;
+              return (
+                <div
+                  key={category.name}
+                  className="backdrop-blur-lg bg-white/70 rounded-xl p-4 border border-gray-200/50 shadow-md hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <p className="text-xs text-gray-700 font-semibold">{category.name}</p>
+                  </div>
+                  <p className="text-2xl font-bold mb-1" style={{ color: category.color }}>
+                    {category.value.toFixed(1)}h
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    占比 {percentage.toFixed(1)}%
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="flex gap-3 justify-end pt-2 border-t border-gray-200">
-          <Button variant="outline" onClick={onClose} className="backdrop-blur-lg bg-white/70 px-4 py-2">
+
+        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200/50">
+          <Button 
+            variant="outline" 
+            onClick={onClose} 
+            className="backdrop-blur-lg bg-white/70 px-6 py-2 hover:bg-white/90"
+          >
             关闭
           </Button>
         </div>
